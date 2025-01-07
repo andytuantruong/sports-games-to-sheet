@@ -122,5 +122,5 @@ if __name__ == "__main__":
     # update cells from B to C column with away to home teams
     for game_info in todays_games:
         row_number = game_info[0] + 2
-        worksheet.update(f'B{row_number}', [[game_info[1]]])
-        worksheet.update(f'C{row_number}', [[game_info[2]]])
+        worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
+        worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
