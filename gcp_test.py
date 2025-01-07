@@ -107,11 +107,19 @@ def insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, n
     print(f"Inserted cells and shifted down from {start_cell} spanning {num_rows} rows and {num_columns} columns.")
 
 if __name__ == "__main__":
-    collect_nba_game_data()
+    todays_games = collect_nba_game_data()
+    
     start_cell = "A3"
-
-    num_rows = 10 # TODO: count indices to determine rows generated
-    num_columns = 6  # always A to F 
+    
+    # set to last index
+    num_rows = todays_games[-1][0]
+    num_columns = 6
 
     insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
     create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
+
+    # update cells from B to C column with away to home teams
+    for game_info in todays_games:
+        row_number = game_info[0] + 2
+        worksheet.update(f'B{row_number}', [[game_info[1]]])
+        worksheet.update(f'C{row_number}', [[game_info[2]]])
