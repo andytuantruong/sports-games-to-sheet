@@ -22,8 +22,9 @@ client = gspread.authorize(credentials)
 # open the spreadsheet by its title
 sheet = client.open_by_key(sheet_id)
 
-# A3 will always be the starting point for the date
-worksheet = sheet.sheet1
+worksheet = sheet.get_worksheet_by_id(int(worksheet_gid))
+if worksheet is None:
+    raise ValueError(f"No worksheet found with GID: {worksheet_gid}")
 
 # worksheet.update_acell('A3', '9/10/2024')
 # print("Cell A3 updated with today's date")
