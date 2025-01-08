@@ -1,3 +1,4 @@
+import datetime
 import gspread
 import os
 from dotenv import load_dotenv
@@ -118,6 +119,10 @@ if __name__ == "__main__":
 
     insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
     create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
+
+    # Add today's date to the top-left cell
+    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    worksheet.update_acell(start_cell, today_date)
 
     # update cells from B to C column with away to home teams
     for game_info in todays_games:
