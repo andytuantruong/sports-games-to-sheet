@@ -27,9 +27,6 @@ worksheet = sheet.get_worksheet_by_id(int(worksheet_gid))
 if worksheet is None:
     raise ValueError(f"No worksheet found with GID: {worksheet_gid}")
 
-# worksheet.update_acell('A3', '9/10/2024')
-# print("Cell A3 updated with today's date")
-
 # creating an outer border around games of the day
 def create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns):
     # using Google Sheets API service
