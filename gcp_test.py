@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-from nba_scraper import collect_nba_game_data
+from nba_scraper import collect_nba_game_data, update_game_results
 
 # oauth2 scope
 scopes = ['https://www.googleapis.com/auth/spreadsheets']
@@ -105,6 +105,24 @@ def insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, n
 
     print(f"Inserted cells and shifted down from {start_cell} spanning {num_rows} rows and {num_columns} columns.")
 
+def update_game_results_in_sheet():
+    game_results = update_game_results()
+
+    for i, game_info in game_results.items():
+        row_number = i + 2
+        winner = game_info['winner']
+
+        if winner == "AWAY":
+            away_team = worksheet.cell(row_number, 2).value
+            worksheet.update(range_name=f'D{row_number}', values=[[away_team]])
+            print(f"Copied away team '{away_team}' to D{row_number} as the winner.")
+        elif winner == "HOME":
+            home_team = worksheet.cell(row_number, 3).value
+            worksheet.update(range_name=f'D{row_number}', values=[[home_team]])
+            print(f"Copied home team '{home_team}' to D{row_number} as the winner.")
+        else:
+            print(f"Invalid winner value for game {i+1}: {winner}")
+
 if __name__ == "__main__":
     todays_games = collect_nba_game_data()
     
@@ -114,15 +132,4 @@ if __name__ == "__main__":
     num_rows = todays_games[-1][0]
     num_columns = 6
 
-    insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
-    create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
-
-    # Add today's date to the top-left cell
-    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    worksheet.update_acell(start_cell, today_date)
-
-    # update cells from B to C column with away to home teams
-    for game_info in todays_games:
-        row_number = game_info[0] + 2
-        worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
-        worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
+    update_game_results_in_sheet()
