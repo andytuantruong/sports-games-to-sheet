@@ -123,6 +123,17 @@ def update_game_results_in_sheet():
         else:
             print(f"Invalid winner value for game {i+1}: {winner}")
 
+def update_todays_games_in_sheet(worksheet, start_cell, todays_games):
+    # Add today's date to the top-left cell
+    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+    worksheet.update_acell(start_cell, today_date)
+
+    # update cells from B to C column with away to home teams
+    for game_info in todays_games:
+        row_number = game_info[0] + 2
+        worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
+        worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
+
 if __name__ == "__main__":
     todays_games = collect_nba_game_data()
     
@@ -133,3 +144,8 @@ if __name__ == "__main__":
     num_columns = 6
 
     update_game_results_in_sheet()
+
+    insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
+    create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
+    update_todays_games_in_sheet(worksheet, start_cell, todays_games)
+    print("Updated complete!")
