@@ -3,15 +3,22 @@ from datetime import datetime, timedelta
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException
+from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 
+def setup_ff_driver():
+    firefox_options = Options()
+    firefox_options.add_argument('--headless')
+    service = Service()
+    driver = webdriver.Firefox(options=firefox_options, service=service)
+    return driver
 
 def collect_nba_game_data():
-    driver = webdriver.Firefox()
+    driver = setup_ff_driver()
 
     # URL for NBA lineups on Rotowire
     rotowire_url = "https://www.rotowire.com/basketball/nba-lineups.php"
     driver.get(rotowire_url)
-    time.sleep(2)  # Allow time for the page to load
 
     # Xpath for game containers
     game_elements = driver.find_elements(
@@ -43,7 +50,7 @@ def collect_nba_game_data():
 
         game_index += 1
 
-    driver.close()
+    driver.quit()
     return games_array
 
 def update_game_results():
@@ -51,9 +58,8 @@ def update_game_results():
     yesterday_date = yesterday.strftime('%Y-%m-%d')
     url = f"https://www.rotowire.com/basketball/scoreboard.php?date={yesterday_date}"
 
-    driver = webdriver.Firefox()
+    driver = setup_ff_driver()
     driver.get(url)
-    time.sleep(2)
 
     # Extract game score results
     # .col used for games in OT
@@ -103,12 +109,5 @@ def update_game_results():
     return game_results
 
 if __name__ == '__main__':
-    # Collect the game data as a structured array
-    #todays_games = collect_nba_game_data()
-
-    #print("\nGames (AWAY vs HOME):")
-    #for game_info in todays_games:
-    #    print(f"Game {game_info[0]}: {game_info[1]} vs {game_info[2]}")
-    
     gr = update_game_results()
     print(f"gr: {gr}")

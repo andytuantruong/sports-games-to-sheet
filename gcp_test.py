@@ -141,11 +141,20 @@ def update_todays_games_in_sheets(sheets_info, todays_games):
             worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
             worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
 
-if __name__ == "__main__":
-    todays_games = collect_nba_game_data()
-    game_results = update_game_results()
-    
-    update_game_results_in_sheets(sheets_info, game_results)
-    update_todays_games_in_sheets(sheets_info, todays_games)
+def main():
+    try:
+        print("Collecting NBA game data...")
+        todays_games = collect_nba_game_data()
+        print("Collecting game results...")
+        game_results = update_game_results()
+        
+        update_game_results_in_sheets(sheets_info, game_results)
+        update_todays_games_in_sheets(sheets_info, todays_games)
+        print("Update complete for all sheets!")
+        
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
+        raise
 
-    print("Update complete for all sheets!")
+if __name__ == "__main__":
+    main()
