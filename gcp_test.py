@@ -7,6 +7,10 @@ from googleapiclient.discovery import build
 
 from nba_scraper import collect_nba_game_data, update_game_results
 
+# Constants
+START_CELL = "A3"
+NUM_COLUMNS = 6
+
 # OAuth2 scope
 scopes = ['https://www.googleapis.com/auth/spreadsheets']
 
@@ -76,49 +80,46 @@ def insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, n
 
     print(f"Inserted cells and shifted down on sheet {worksheet_gid} from {start_cell} spanning {num_rows} rows and {num_columns} columns.")
 
-def update_game_results_in_sheet(worksheet):
-    game_results = update_game_results()
-
-    for i, game_info in game_results.items():
-        row_number = i + 2
-        winner = game_info['winner']
-
-        if winner == "AWAY":
-            away_team = worksheet.cell(row_number, 2).value
-            worksheet.update(range_name=f'D{row_number}', values=[[away_team]])
-            print(f"Copied away team '{away_team}' to D{row_number} as the winner.")
-        elif winner == "HOME":
-            home_team = worksheet.cell(row_number, 3).value
-            worksheet.update(range_name=f'D{row_number}', values=[[home_team]])
-            print(f"Copied home team '{home_team}' to D{row_number} as the winner.")
-        else:
-            print(f"Invalid winner value for game {i+1}: {winner}")
-
-def update_todays_games_in_sheet(worksheet, start_cell, todays_games):
-    # Add today's date to the top-left cell
-    today_date = datetime.datetime.now().strftime('%Y-%m-%d')
-    worksheet.update_acell(start_cell, today_date)
-
-    # update cells from B to C column with away to home teams
-    for game_info in todays_games:
-        row_number = game_info[0] + 2
-        worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
-        worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
-
-
-if __name__ == "__main__":
-    todays_games = collect_nba_game_data()
-    start_cell = "A3"
-    num_rows = todays_games[-1][0]
-    num_columns = 6
-
+def update_game_results_in_sheets(sheets_info, game_results):
     for sheet_info in sheets_info:
         sheet_id = sheet_info["sheet_id"]
         worksheet_gid = sheet_info["worksheet_GID"]
         sheet_name = sheet_info["name"]
         
-        print(f"Updating {sheet_name} ({sheet_id})...")
+        print(f"Updating game results in {sheet_name}...")
+        
+        sheet = client.open_by_key(sheet_id)
+        worksheet = sheet.get_worksheet_by_id(int(worksheet_gid))
+        
+        if worksheet is None:
+            print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
+            continue
 
+        for i, game_info in game_results.items():
+            row_number = i + 2 # A3
+            winner = game_info['winner']
+
+            if winner == "AWAY":
+                away_team = worksheet.cell(row_number, 2).value
+                worksheet.update(range_name=f'D{row_number}', values=[[away_team]])
+                print(f"Copied away team '{away_team}' to D{row_number} as the winner.")
+            elif winner == "HOME":
+                home_team = worksheet.cell(row_number, 3).value
+                worksheet.update(range_name=f'D{row_number}', values=[[home_team]])
+                print(f"Copied home team '{home_team}' to D{row_number} as the winner.")
+            else:
+                print(f"Invalid winner value for game {i+1}: {winner}")
+
+def update_todays_games_in_sheets(sheets_info, todays_games):
+    num_rows = todays_games[-1][0]  # Get number of rows from last game index
+    
+    for sheet_info in sheets_info:
+        sheet_id = sheet_info["sheet_id"]
+        worksheet_gid = sheet_info["worksheet_GID"]
+        sheet_name = sheet_info["name"]
+        
+        print(f"Updating today's games in {sheet_name}...")
+        
         # Open the specific Google Sheet and Worksheet
         sheet = client.open_by_key(sheet_id)
         worksheet = sheet.get_worksheet_by_id(int(worksheet_gid))
@@ -126,10 +127,25 @@ if __name__ == "__main__":
         if worksheet is None:
             print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
             continue
+
+        insert_cells_and_shift_down(sheet_id, worksheet_gid, START_CELL, num_rows, NUM_COLUMNS)
+        create_outer_border(sheet_id, worksheet_gid, START_CELL, num_rows, NUM_COLUMNS)
         
-        update_game_results_in_sheet(worksheet)
-        insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
-        create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns)
-        update_todays_games_in_sheet(worksheet, start_cell, todays_games)
+        # Add today's date to top left cell
+        today_date = datetime.datetime.now().strftime('%Y-%m-%d')
+        worksheet.update_acell(START_CELL, today_date)
+
+        # Update cells from B:away to C:home columns
+        for game_info in todays_games:
+            row_number = game_info[0] + 2
+            worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
+            worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
+
+if __name__ == "__main__":
+    todays_games = collect_nba_game_data()
+    game_results = update_game_results()
+    
+    update_game_results_in_sheets(sheets_info, game_results)
+    update_todays_games_in_sheets(sheets_info, todays_games)
 
     print("Update complete for all sheets!")
