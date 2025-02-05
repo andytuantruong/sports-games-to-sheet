@@ -25,7 +25,6 @@ client = gspread.authorize(credentials)
 sheets_info = [
     {"sheet_id": os.getenv('SHEET_ID_1'), "worksheet_GID": os.getenv('WORKSHEET_GID_1'), "name": "Personal"},
     {"sheet_id": os.getenv('SHEET_ID_2'), "worksheet_GID": os.getenv('WORKSHEET_GID_2'), "name": "Shared"},
-
 ]
 
 def create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_columns):
@@ -95,20 +94,34 @@ def update_game_results_in_sheets(sheets_info, game_results):
             print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
             continue
 
+        # Create a list to store the batch update requests
+        update_requests = []
+        
         for i, game_info in game_results.items():
-            row_number = i + 2 # A3
+            row_number = i + 2  # A3
             winner = game_info['winner']
 
             if winner == "AWAY":
                 away_team = worksheet.cell(row_number, 2).value
-                worksheet.update(range_name=f'D{row_number}', values=[[away_team]])
-                print(f"Copied away team '{away_team}' to D{row_number} as the winner.")
+                update_requests.append({
+                    'range': f'D{row_number}',
+                    'values': [[away_team]]
+                })
+                print(f"Queued away team '{away_team}' to D{row_number} as the winner.")
             elif winner == "HOME":
                 home_team = worksheet.cell(row_number, 3).value
-                worksheet.update(range_name=f'D{row_number}', values=[[home_team]])
-                print(f"Copied home team '{home_team}' to D{row_number} as the winner.")
+                update_requests.append({
+                    'range': f'D{row_number}',
+                    'values': [[home_team]]
+                })
+                print(f"Queued home team '{home_team}' to D{row_number} as the winner.")
             else:
                 print(f"Invalid winner value for game {i+1}: {winner}")
+
+        # Perform the batch update
+        if update_requests:
+            worksheet.batch_update(update_requests)
+            print(f"Game results updated in {sheet_name}.")
 
 def update_todays_games_in_sheets(sheets_info, todays_games):
     num_rows = todays_games[-1][0]  # Get number of rows from last game index
@@ -135,11 +148,24 @@ def update_todays_games_in_sheets(sheets_info, todays_games):
         today_date = datetime.datetime.now().strftime('%Y-%m-%d')
         worksheet.update_acell(START_CELL, today_date)
 
+        # Store a list and append as a batch
+        update_requests = []
         # Update cells from B:away to C:home columns
         for game_info in todays_games:
             row_number = game_info[0] + 2
-            worksheet.update(range_name=f'B{row_number}', values=[[game_info[1].lower()]])
-            worksheet.update(range_name=f'C{row_number}', values=[[game_info[2].lower()]])
+            update_requests.append({
+                'range': f'B{row_number}',
+                'values': [[game_info[1].lower()]]
+            })
+            update_requests.append({
+                'range': f'C{row_number}',
+                'values': [[game_info[2].lower()]]
+            })
+        
+        # Perform the batch update
+        if update_requests:
+            worksheet.batch_update(update_requests)
+            print(f"Today's games updated in {sheet_name}.")
 
 def main():
     try:
