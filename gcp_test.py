@@ -124,6 +124,10 @@ def update_game_results_in_sheets(sheets_info, game_results):
             print(f"Game results updated in {sheet_name}.")
 
 def update_todays_games_in_sheets(sheets_info, todays_games):
+    if not todays_games:
+        print("No games scheduled for today. Skipping update.")
+        return
+    
     num_rows = todays_games[-1][0]  # Get number of rows from last game index
     
     for sheet_info in sheets_info:
@@ -171,11 +175,22 @@ def main():
     try:
         print("Collecting NBA game data...")
         todays_games = collect_nba_game_data()
-        print("Collecting game results...")
+        
+        print("Collecting game results from yesterday...")
         game_results = update_game_results()
         
-        update_game_results_in_sheets(sheets_info, game_results)
-        update_todays_games_in_sheets(sheets_info, todays_games)
+        if game_results:
+            update_game_results_in_sheets(sheets_info, game_results)
+            print("Yesterday's game results updated!")
+        else:
+            print("No game results to update from yesterday.")
+        
+        if todays_games:
+            update_todays_games_in_sheets(sheets_info, todays_games)
+            print("Today's games updated!")
+        else:
+            print("No games scheduled for today.")
+            
         print("Update complete for all sheets!")
         
     except Exception as e:
