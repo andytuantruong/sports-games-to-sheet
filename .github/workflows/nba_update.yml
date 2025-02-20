@@ -1,0 +1,43 @@
+name: NBA Sheet Update
+
+on:
+  # Run at 12:01 AM PST (8:01 UTC) every day
+  schedule:
+    - cron: '1 8 * * *'
+  # Optional: Allow manual trigger from GitHub Actions tab
+  workflow_dispatch:
+
+jobs:
+  update-nba-sheets:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Python 3.11
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip' # Caches pip dependencies
+
+      # Install dependencies from requirements.txt
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Create .env file from GitHub secrets
+      - name: Create .env file
+        run: |
+          echo "JSON_CREDENTIALS='''${{ secrets.JSON_CREDENTIALS }}'''" > .env
+          echo "SHEET_ID_1='${{ secrets.SHEET_ID_1 }}'" >> .env
+          echo "WORKSHEET_GID_1='${{ secrets.WORKSHEET_GID_1 }}'" >> .env
+          echo "SHEET_ID_2='${{ secrets.SHEET_ID_2 }}'" >> .env
+          echo "WORKSHEET_GID_2='${{ secrets.WORKSHEET_GID_2 }}'" >> .env
+
+      # Run the NBA update script
+      - name: Run NBA update script
+        run: python gcp_test.py
