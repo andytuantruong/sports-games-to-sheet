@@ -29,10 +29,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      # Create .env file from GitHub secrets
-      - name: Create .env file
+      # Create credentials file and .env file
+      - name: Setup Credentials
         run: |
-          echo "JSON_CREDENTIALS=${{ secrets.JSON_CREDENTIALS }}" > .env
+          echo '${{ secrets.JSON_CREDENTIALS }}' > service-account.json
+          echo "JSON_CREDENTIALS=service-account.json" > .env
           echo "SHEET_ID_1=${{ secrets.SHEET_ID_1 }}" >> .env
           echo "WORKSHEET_GID_1=${{ secrets.WORKSHEET_GID_1 }}" >> .env
           echo "SHEET_ID_2=${{ secrets.SHEET_ID_2 }}" >> .env
@@ -45,3 +46,8 @@ jobs:
       # Run the NBA update script
       - name: Run NBA update script
         run: python gcp_test.py
+
+      # Clean up credentials file
+      - name: Cleanup
+        if: always()
+        run: rm -f service-account.json
