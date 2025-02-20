@@ -18,10 +18,17 @@ scopes = ['https://www.googleapis.com/auth/spreadsheets']
 load_dotenv()
 json_credentials = os.getenv('JSON_CREDENTIALS')
 
-json_credentials = json_credentials.strip("'")
-credentials_dict = json.loads(json_credentials)
-credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
-client = gspread.authorize(credentials)
+if not json_credentials:
+    raise ValueError("JSON_CREDENTIALS environment variable is not set")
+
+try:
+    json_credentials = json_credentials.strip("'\"")
+    credentials_dict = json.loads(json_credentials)
+    credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
+    client = gspread.authorize(credentials)
+except Exception as e:
+    print(f"Error processing credentials: {str(e)}")
+    raise
 
 # List of Google Sheets with unique IDs and worksheet GIDs
 sheets_info = [

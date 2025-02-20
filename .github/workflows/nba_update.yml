@@ -32,11 +32,15 @@ jobs:
       # Create .env file from GitHub secrets
       - name: Create .env file
         run: |
-          echo "JSON_CREDENTIALS='''${{ secrets.JSON_CREDENTIALS }}'''" > .env
+          echo "JSON_CREDENTIALS='${{ secrets.JSON_CREDENTIALS }}'" > .env
           echo "SHEET_ID_1='${{ secrets.SHEET_ID_1 }}'" >> .env
           echo "WORKSHEET_GID_1='${{ secrets.WORKSHEET_GID_1 }}'" >> .env
           echo "SHEET_ID_2='${{ secrets.SHEET_ID_2 }}'" >> .env
           echo "WORKSHEET_GID_2='${{ secrets.WORKSHEET_GID_2 }}'" >> .env
+
+      # Debugging step (optional)
+      - name: Show .env file contents
+        run: cat .env
 
       # Run the NBA update script
       - name: Run NBA update script
