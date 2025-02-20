@@ -47,7 +47,15 @@ jobs:
       - name: Run NBA update script
         run: python gcp_test.py
 
-      # Clean up credentials file
-      - name: Cleanup
+      # Cleanup steps
+      - name: Clean up sensitive files
         if: always()
-        run: rm -f service-account.json
+        run: |
+          rm -f service-account.json
+          rm -f .env
+
+      - name: Clean up workspace
+        if: always()
+        run: |
+          git clean -fdx
+          rm -rf ./*
