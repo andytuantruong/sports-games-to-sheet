@@ -1,6 +1,7 @@
 import datetime
 import gspread
 import os
+import json
 from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
@@ -17,8 +18,9 @@ scopes = ['https://www.googleapis.com/auth/spreadsheets']
 load_dotenv()
 json_credentials = os.getenv('JSON_CREDENTIALS')
 
-# load service account from JSON credentials
-credentials = Credentials.from_service_account_file(json_credentials, scopes=scopes)
+json_credentials = json_credentials.strip("'")
+credentials_dict = json.loads(json_credentials)
+credentials = Credentials.from_service_account_info(credentials_dict, scopes=scopes)
 client = gspread.authorize(credentials)
 
 # List of Google Sheets with unique IDs and worksheet GIDs
