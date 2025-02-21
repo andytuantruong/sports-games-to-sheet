@@ -1,9 +1,9 @@
 name: NBA Sheet Update
 
 on:
-  # Run at 9:19 AM PST (5:19 PM UTC) every day
+  # Run at 12:10 AM PST (8:10 AM UTC) every day
   schedule:
-    - cron: '20 17 * * *'
+    - cron: '10 8 * * *'
   # Optional: Allow manual trigger from GitHub Actions tab
   workflow_dispatch:
 
