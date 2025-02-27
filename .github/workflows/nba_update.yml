@@ -29,6 +29,21 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      # Install Firefox
+      - name: Setup Firefox
+        uses: browser-actions/setup-firefox@latest
+        with:
+          firefox-version: '135.0.1'
+
+      # Install geckodriver 0.36.0
+      - name: Install geckodriver 0.36.0
+        run: |
+          wget https://github.com/mozilla/geckodriver/releases/download/v0.36.0/geckodriver-v0.36.0-linux64.tar.gz
+          tar -xzf geckodriver-v0.36.0-linux64.tar.gz
+          chmod +x geckodriver
+          sudo mv geckodriver /usr/local/bin/
+          geckodriver --version
+
       # Create credentials file and .env file
       - name: Setup Credentials
         run: |
