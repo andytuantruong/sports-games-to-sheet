@@ -71,6 +71,15 @@ def collect_mlb_game_data():
     return games_array
 
 def update_game_results(specific_date=None):
+    """
+    Scrape MLB game results from Rotowire's scoreboard page.
+    
+    Args:
+        specific_date (str, optional): Date in YYYY-MM-DD format. Defaults to yesterday.
+        
+    Returns:
+        dict: Dictionary of game results with format {game_index: {'winner': 'HOME'/'AWAY'}}
+    """
     if specific_date:
         target_date = specific_date
     else:
@@ -85,50 +94,45 @@ def update_game_results(specific_date=None):
     # Give the page time to load
     time.sleep(3)
     
-    # Extract game score results - using the same approach as in the NBA scraper
-    game_elements = driver.find_elements(By.CSS_SELECTOR, ".col-2.align-c.bold, .col.align-c.bold")
+    # Find all game containers
+    game_containers = driver.find_elements(By.CSS_SELECTOR, "div.col-4_xl-6_md-12.pad-0-10.mb-20")
     
     game_results = {}
     
-    # Print the number of game elements found
-    print(f"Found {len(game_elements)} MLB game elements for date {target_date}.")
+    print(f"Found {len(game_containers)} MLB game elements for date {target_date}.")
     
-    # Inspect each game_element
-    for i, game in enumerate(game_elements):
-        print(f"Game {i+1}:")
-        
+    for i, container in enumerate(game_containers):
         try:
-            # Split the text content by the newline character
-            final_game_text = game.text.strip()
-            scores = final_game_text.split("\n")  # Split by newline
+            # Find the score rows within each game container
+            score_rows = container.find_elements(
+                By.CSS_SELECTOR, 
+                "div.flex-row.align-center[style*='justify-content:space-between']"
+            )
             
-            if len(scores) == 2:
-                # Convert away and home scores to integers
-                away_score = int(scores[0].strip())
-                home_score = int(scores[1].strip())
+            if len(score_rows) >= 2:  # We need at least 2 rows for away and home scores
+                # Get the first div (runs) from each score row
+                away_score = int(score_rows[0].find_element(By.CSS_SELECTOR, "div:first-child").text)
+                home_score = int(score_rows[1].find_element(By.CSS_SELECTOR, "div:first-child").text)
                 
+                # Determine winner
                 if away_score > home_score:
                     winner = "AWAY"
                 elif home_score > away_score:
                     winner = "HOME"
                 else:
-                    winner = "TIE"
+                    print(f"Tie game found for game {i+1} - skipping")
+                    continue
 
                 # Store results in dictionary
                 game_results[i+1] = {
-                    "away_score": away_score,
-                    "home_score": home_score,
                     "winner": winner
                 }
                 
-                print(f"Away score: {away_score}, Home score: {home_score}, Winner: {winner}")
             else:
-                print(f"Error parsing scores for game {i+1}: {final_game_text}")
+                print(f"Could not find score rows for game {i+1}")
         
         except Exception as e:
             print(f"Error while processing game {i+1}: {e}")
-        
-        print("-" * 50)
 
     driver.quit()
     return game_results

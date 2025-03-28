@@ -130,8 +130,6 @@ def create_outer_border(sheet_id, worksheet_gid, start_cell, num_rows, num_colum
     body = {'requests': requests}
     execute_batch_update(service, sheet_id, body)
 
-    print(f"Outer border created on sheet {worksheet_gid} from {start_cell} spanning {num_rows} rows and {num_columns} columns.")
-
 def insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, num_columns):
     """
     Insert cells and shift existing cells down in a Google Sheet.
@@ -165,9 +163,6 @@ def insert_cells_and_shift_down(sheet_id, worksheet_gid, start_cell, num_rows, n
     body = {'requests': requests}
     execute_batch_update(service, sheet_id, body)
 
-    print(f"Inserted cells and shifted down on sheet {worksheet_gid} from {start_cell} spanning {num_rows} rows and {num_columns} columns.")
-
-
 def update_tomorrows_games_in_sheets(sheets_info, tomorrows_games):
     """
     Update tomorrow's MLB games in Google Sheets.
@@ -194,7 +189,6 @@ def update_tomorrows_games_in_sheets(sheets_info, tomorrows_games):
         worksheet = get_worksheet_by_id(sheet, worksheet_gid)
         
         if worksheet is None:
-            print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
             continue
 
         insert_cells_and_shift_down(sheet_id, worksheet_gid, START_CELL, num_rows, NUM_COLUMNS)
@@ -236,7 +230,6 @@ def update_game_results_in_sheets(sheets_info, game_results):
         worksheet = get_worksheet_by_id(sheet, worksheet_gid)
         
         if worksheet is None:
-            print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
             continue
 
         # Create a list to store the batch update requests
@@ -252,14 +245,12 @@ def update_game_results_in_sheets(sheets_info, game_results):
                     'range': f'D{row_number}',
                     'values': [[away_team]]
                 })
-                print(f"Queued away team '{away_team}' to D{row_number} as the winner.")
             elif winner == "HOME":
                 home_team = get_cell_value(worksheet, row_number, 3)
                 update_requests.append({
                     'range': f'D{row_number}',
                     'values': [[home_team]]
                 })
-                print(f"Queued home team '{home_team}' to D{row_number} as the winner.")
             else:
                 print(f"Invalid winner value for game {i+1}: {winner}")
 
