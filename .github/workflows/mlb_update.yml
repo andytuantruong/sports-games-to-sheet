@@ -1,7 +1,7 @@
 name: MLB Sheet Update
 
 on:
-  # Run at 12:05 AM PST (8:10 AM UTC) every day
+  # Run at 12:05 AM PST (8:05 AM UTC) every day
   schedule:
     - cron: '5 8 * * *'
   # Optional: Allow manual trigger from GitHub Actions tab
@@ -44,13 +44,17 @@ jobs:
           sudo mv geckodriver /usr/local/bin/
           geckodriver --version
 
-      # Create credentials file and MLB env file
-      - name: Setup MLB Credentials
+      # Create credentials file and .env file
+      - name: Setup Credentials
         run: |
           echo '${{ secrets.JSON_CREDENTIALS }}' > service-account.json
-          echo "JSON_CREDENTIALS=service-account.json" > .mlb.env
-          echo "SHEET_ID=${{ secrets.MLB_SHEET_ID }}" >> .mlb.env
-          echo "WORKSHEET_GID=${{ secrets.MLB_WORKSHEET_GID }}" >> .mlb.env
+          echo "JSON_CREDENTIALS=service-account.json" > .env
+          echo "SHEET_ID=${{ secrets.MLB_SHEET_ID }}" >> .env
+          echo "WORKSHEET_GID=${{ secrets.MLB_WORKSHEET_GID }}" >> .env
+
+      # Debugging step (optional)
+      - name: Show .env file contents
+        run: cat .env
 
       # Run the MLB update script
       - name: Run MLB update script
@@ -61,7 +65,7 @@ jobs:
         if: always()
         run: |
           rm -f service-account.json
-          rm -f .mlb.env
+          rm -f .env
 
       - name: Clean up workspace
         if: always()
