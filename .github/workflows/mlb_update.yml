@@ -10,6 +10,10 @@ on:
 jobs:
   update-mlb-sheets:
     runs-on: ubuntu-latest
+    env:
+      JSON_CREDENTIALS: service-account.json
+      SHEET_ID: ${{ secrets.SHEET_ID }}
+      WORKSHEET_GID: ${{ secrets.WORKSHEET_GID }}
 
     steps:
       # Check out the repository code
@@ -44,17 +48,9 @@ jobs:
           sudo mv geckodriver /usr/local/bin/
           geckodriver --version
 
-      # Create credentials file and .env file
-      - name: Setup Credentials
-        run: |
-          echo '${{ secrets.JSON_CREDENTIALS }}' > service-account.json
-          echo "JSON_CREDENTIALS=service-account.json" > .env
-          echo "SHEET_ID=${{ secrets.MLB_SHEET_ID }}" >> .env
-          echo "WORKSHEET_GID=${{ secrets.MLB_WORKSHEET_GID }}" >> .env
-
-      # Debugging step (optional)
-      - name: Show .env file contents
-        run: cat .env
+      # Create credentials file
+      - name: Setup Service Account
+        run: echo '${{ secrets.JSON_CREDENTIALS }}' > service-account.json
 
       # Run the MLB update script
       - name: Run MLB update script
@@ -65,7 +61,6 @@ jobs:
         if: always()
         run: |
           rm -f service-account.json
-          rm -f .env
 
       - name: Clean up workspace
         if: always()
