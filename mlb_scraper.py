@@ -70,16 +70,14 @@ def collect_mlb_game_data():
     driver.quit()
     return games_array
 
-def update_game_results():
-    """
-    Scrape MLB game results from yesterday.
-    
-    Returns:
-        dict: Dictionary of game results with format {game_index: {'away_score': int, 'home_score': int, 'winner': str}, ...}
-    """
-    yesterday = datetime.now() - timedelta(days=1)
-    yesterday_date = yesterday.strftime('%Y-%m-%d')
-    url = f"https://www.rotowire.com/baseball/scoreboard.php?date={yesterday_date}"
+def update_game_results(specific_date=None):
+    if specific_date:
+        target_date = specific_date
+    else:
+        yesterday = datetime.now() - timedelta(days=1)
+        target_date = yesterday.strftime('%Y-%m-%d')
+        
+    url = f"https://www.rotowire.com/baseball/scoreboard.php?date={target_date}"
     
     driver = setup_ff_driver()
     driver.get(url)
@@ -93,7 +91,7 @@ def update_game_results():
     game_results = {}
     
     # Print the number of game elements found
-    print(f"Found {len(game_elements)} MLB game elements.")
+    print(f"Found {len(game_elements)} MLB game elements for date {target_date}.")
     
     # Inspect each game_element
     for i, game in enumerate(game_elements):

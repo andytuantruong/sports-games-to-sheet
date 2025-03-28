@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-from mlb_scraper import collect_mlb_game_data
+from mlb_scraper import collect_mlb_game_data, update_game_results
 
 # Constants
 START_CELL = "A3"
@@ -224,10 +224,65 @@ def update_tomorrows_games_in_sheets(sheets_info, tomorrows_games):
             batch_update(worksheet, update_requests)
             print(f"Tomorrow's MLB games updated in {sheet_name}.")
 
+def update_game_results_in_sheets(sheets_info, game_results):
+    for sheet_info in sheets_info:
+        sheet_id = sheet_info["sheet_id"]
+        worksheet_gid = sheet_info["worksheet_GID"]
+        sheet_name = sheet_info["name"]
+        
+        print(f"Updating MLB game results in {sheet_name}...")
+        
+        sheet = open_sheet_by_key(client, sheet_id)
+        worksheet = get_worksheet_by_id(sheet, worksheet_gid)
+        
+        if worksheet is None:
+            print(f"Error: Worksheet {worksheet_gid} not found in {sheet_name}!")
+            continue
+
+        # Create a list to store the batch update requests
+        update_requests = []
+        
+        for i, game_info in game_results.items():
+            row_number = i + 2  # A3
+            winner = game_info['winner']
+
+            if winner == "AWAY":
+                away_team = get_cell_value(worksheet, row_number, 2)
+                update_requests.append({
+                    'range': f'D{row_number}',
+                    'values': [[away_team]]
+                })
+                print(f"Queued away team '{away_team}' to D{row_number} as the winner.")
+            elif winner == "HOME":
+                home_team = get_cell_value(worksheet, row_number, 3)
+                update_requests.append({
+                    'range': f'D{row_number}',
+                    'values': [[home_team]]
+                })
+                print(f"Queued home team '{home_team}' to D{row_number} as the winner.")
+            else:
+                print(f"Invalid winner value for game {i+1}: {winner}")
+
+        # Perform the batch update
+        if update_requests:
+            batch_update(worksheet, update_requests)
+            print(f"MLB game results updated in {sheet_name}.")
+
 def main():
     try:
         print("Collecting MLB game data for tomorrow...")
         tomorrows_games = collect_mlb_game_data()
+        
+        print("Collecting MLB game results from yesterday...")
+        yesterday = datetime.datetime.now() - datetime.timedelta(days=1)
+        yesterday_date = yesterday.strftime('%Y-%m-%d')
+        game_results = update_game_results(yesterday_date)
+        
+        if game_results:
+            update_game_results_in_sheets(sheets_info, game_results)
+            print("Yesterday's MLB game results updated!")
+        else:
+            print("No MLB game results to update from yesterday.")
         
         if tomorrows_games:
             update_tomorrows_games_in_sheets(sheets_info, tomorrows_games)
