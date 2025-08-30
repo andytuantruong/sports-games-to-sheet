@@ -86,7 +86,7 @@ def update_game_results(specific_date=None):
         yesterday = datetime.now() - timedelta(days=1)
         target_date = yesterday.strftime('%Y-%m-%d')
         
-    url = f"https://www.rotowire.com/baseball/scoreboard.php?date={target_date}"
+    url = f"https://www.rotowire.com/baseball/scoreboard.php?day=yesterday"
     
     driver = setup_ff_driver()
     driver.get(url)
@@ -94,8 +94,11 @@ def update_game_results(specific_date=None):
     # Give the page time to load
     time.sleep(3)
     
-    # Find all game containers
-    game_containers = driver.find_elements(By.CSS_SELECTOR, "div.col-4_xl-6_md-12.pad-0-10.mb-20")
+    # Find all game containers using the new structure
+    game_containers = driver.find_elements(
+        By.XPATH,
+        "//div[contains(@class, 'col-4') and contains(@class, 'xl-6') and contains(@class, 'md-12')]"
+    )
     
     game_results = {}
     
@@ -103,16 +106,20 @@ def update_game_results(specific_date=None):
     
     for i, container in enumerate(game_containers):
         try:
-            # Find the score rows within each game container
-            score_rows = container.find_elements(
-                By.CSS_SELECTOR, 
-                "div.flex-row.align-center[style*='justify-content:space-between']"
-            )
+            # Look for any div elements that contain only numbers (potential scores)
+            all_divs = container.find_elements(By.XPATH, ".//div")
             
-            if len(score_rows) >= 2:  # We need at least 2 rows for away and home scores
-                # Get the first div (runs) from each score row
-                away_score = int(score_rows[0].find_element(By.CSS_SELECTOR, "div:first-child").text)
-                home_score = int(score_rows[1].find_element(By.CSS_SELECTOR, "div:first-child").text)
+            # Find divs that contain only numeric text (potential scores)
+            score_divs = []
+            for div in all_divs:
+                text = div.text.strip()
+                if text.isdigit() and len(text) <= 2:  # Scores are usually 1-2 digits
+                    score_divs.append((div, int(text)))
+            
+            if len(score_divs) >= 2:
+                # We found at least 2 scores, take the first two
+                away_score = score_divs[0][1]
+                home_score = score_divs[1][1]
                 
                 # Determine winner
                 if away_score > home_score:
@@ -128,9 +135,10 @@ def update_game_results(specific_date=None):
                     "winner": winner
                 }
                 
+                print(f"Game {i+1}: Away {away_score} - Home {home_score} -> Winner: {winner}")
             else:
-                print(f"Could not find score rows for game {i+1}")
-        
+                print(f"Game {i+1}: No scores found (upcoming game)")
+                
         except Exception as e:
             print(f"Error while processing game {i+1}: {e}")
 
@@ -140,5 +148,6 @@ def update_game_results(specific_date=None):
 if __name__ == '__main__':
     print("Testing MLB game data collection...")
     games = collect_mlb_game_data()
+    update_game_results()
     print(f"Collected {len(games)} games")
     
