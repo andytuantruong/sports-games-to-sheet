@@ -106,38 +106,51 @@ def update_game_results(specific_date=None):
     
     for i, container in enumerate(game_containers):
         try:
-            # Look for any div elements that contain only numbers (potential scores)
-            all_divs = container.find_elements(By.XPATH, ".//div")
+            # Find score elements with the specific class and style
+            score_elements = container.find_elements(
+                By.XPATH,
+                ".//div[@class='flex-row align-center' and contains(@style, 'justify-content:space-between;height:40px;')]"
+            )
             
-            # Find divs that contain only numeric text (potential scores)
-            score_divs = []
-            for div in all_divs:
-                text = div.text.strip()
-                if text.isdigit() and len(text) <= 2:  # Scores are usually 1-2 digits
-                    score_divs.append((div, int(text)))
-            
-            if len(score_divs) >= 2:
-                # We found at least 2 scores, take the first two
-                away_score = score_divs[0][1]
-                home_score = score_divs[1][1]
+            if len(score_elements) >= 2:
+                # Get the first div number from each score element
+                away_score = None
+                home_score = None
                 
-                # Determine winner
-                if away_score > home_score:
-                    winner = "AWAY"
-                elif home_score > away_score:
-                    winner = "HOME"
-                else:
-                    print(f"Tie game found for game {i+1} - skipping")
-                    continue
+                # First score element should be away team
+                if score_elements[0]:
+                    first_div = score_elements[0].find_element(By.XPATH, ".//div[1]")
+                    away_score_text = first_div.text.strip()
+                    if away_score_text.isdigit():
+                        away_score = int(away_score_text)
+                
+                # Second score element should be home team
+                if score_elements[1]:
+                    first_div = score_elements[1].find_element(By.XPATH, ".//div[1]")
+                    home_score_text = first_div.text.strip()
+                    if home_score_text.isdigit():
+                        home_score = int(home_score_text)
+                
+                if away_score is not None and home_score is not None:
+                    # Determine winner
+                    if away_score > home_score:
+                        winner = "AWAY"
+                    elif home_score > away_score:
+                        winner = "HOME"
+                    else:
+                        print(f"Tie game found for game {i+1} - skipping")
+                        continue
 
-                # Store results in dictionary
-                game_results[i+1] = {
-                    "winner": winner
-                }
-                
-                print(f"Game {i+1}: Away {away_score} - Home {home_score} -> Winner: {winner}")
+                    # Store results in dictionary
+                    game_results[i+1] = {
+                        "winner": winner
+                    }
+                    
+                    print(f"Game {i+1}: Away {away_score} - Home {home_score} -> Winner: {winner}")
+                else:
+                    print(f"Game {i+1}: Could not extract valid scores - Away: {away_score}, Home: {home_score}")
             else:
-                print(f"Game {i+1}: No scores found (upcoming game)")
+                print(f"Game {i+1}: Not enough score elements found - found {len(score_elements)} score elements (upcoming game)")
                 
         except Exception as e:
             print(f"Error while processing game {i+1}: {e}")
@@ -147,7 +160,4 @@ def update_game_results(specific_date=None):
 
 if __name__ == '__main__':
     print("Testing MLB game data collection...")
-    games = collect_mlb_game_data()
     update_game_results()
-    print(f"Collected {len(games)} games")
-    
